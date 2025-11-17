@@ -4,6 +4,7 @@ import {
   getFrontend,
   fetchPost,
   IWebSocketData,
+  getAllEditor
 } from "siyuan";
 import "@/index.scss";
 import PluginInfoString from '@/../plugin.json';
@@ -159,6 +160,7 @@ export default class ExcalidrawPlugin extends Plugin {
     (dialog.element.querySelector(".b3-dialog__action [data-type='confirm']") as HTMLElement).addEventListener("click", () => {
       this.data[STORAGE_NAME].labelDisplay = (dialog.element.querySelector("[data-type='labelDisplay']") as HTMLSelectElement).value;
       this.saveData(STORAGE_NAME, this.data[STORAGE_NAME]);
+      getAllEditor().forEach((protyle) => { protyle.reload(false); });
       dialog.destroy();
     });
   }

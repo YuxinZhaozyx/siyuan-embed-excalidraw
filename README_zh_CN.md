@@ -38,6 +38,7 @@
 - [x] 支持导出PDF
 - [x] 支持移动端编辑
 - [x] 图像支持暗黑模式
+- [ ] 支持Excalidraw中显示思源文档内容
 
 > 如有更多需求/建议欢迎[在GitHub仓库中提issue](https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw/issues)或[在思源笔记社区中发帖](https://ld246.com/tag/siyuan)
 
@@ -56,6 +57,8 @@
 
 ## 更新日志
 
++ v0.1.1
+    + 优化：修改配置后重载编辑器
 + v0.1.0
     + 新增功能：Excalidraw图像以SVG格式存储
     + 新增功能：Excalidraw图像可编辑
