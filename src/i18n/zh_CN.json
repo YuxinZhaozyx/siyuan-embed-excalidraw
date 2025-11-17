@@ -1,0 +1,8 @@
+{
+  "editExcalidraw": "编辑 Excalidraw",
+  "labelDisplay": "标签显示",
+  "labelDisplayDescription": "图像块右上角的标签显示（修改后需刷新文档生效）",
+  "noLabel": "不显示标签",
+  "showLabelAlways": "始终显示标签",
+  "showLabelOnHover": "悬停时显示标签"
+}

@@ -1,0 +1,44 @@
+.excalidraw-edit-dialog {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%; // 确保对话框占满高度
+
+    .edit-dialog-header {
+        display: block;
+        height: 24px;
+        flex-shrink: 0;
+        cursor: grab;
+    }
+
+    .edit-dialog-container {
+        padding: 0 16px;
+        display: flex;
+        flex-direction: column;
+        flex: 1; // 让容器占据剩余空间
+        min-height: 0; // 允许容器收缩
+        overflow: hidden; // 防止内容溢出
+
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    }
+
+    .edit-dialog-editor {
+        border: 1px solid var(--b3-border-color);
+        border-radius: var(--b3-border-radius);
+        font-family: var(--b3-font-family-code);
+        flex: 1; // 让编辑器容器占据剩余空间
+        overflow: hidden; // 防止编辑器内容溢出
+    }
+}
+
+html[data-theme-mode="dark"] img[data-src^="assets/excalidraw-"][data-src$=".svg"] {
+    filter: invert(0.8) brightness(1.2);
+}
+
+div[data-type='NodeParagraph']:not(:hover) .protyle-attr .label--embed-excalidraw:not(.label--embed-excalidraw--always) {
+  display: none !important;
+}

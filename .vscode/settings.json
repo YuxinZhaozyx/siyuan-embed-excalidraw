@@ -1,0 +1,59 @@
+{
+  "volar.autoCompleteRefs": true,
+  "volar.updateImportOnFileMove.enabled": true,
+  "css.validate": false,
+  "scss.validate": false,
+  "less.validate": false,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "todo-tree.tree.showBadges": true,
+  "todo-tree.tree.showCountsInTree": true,
+  // Disable the default formatter, use eslint instead
+  "prettier.enable": false,
+  "editor.formatOnSave": false,
+
+  // Auto fix
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "never"
+  },
+
+  // Silent the stylistic rules in you IDE, but still auto fix them
+  // "eslint.rules.customizations": [
+  //   { "rule": "style/*", "severity": "warn", "fixable": true },
+  //   { "rule": "format/*", "severity": "warn", "fixable": true },
+  //   { "rule": "*-indent", "severity": "warn", "fixable": true },
+  //   { "rule": "*-spacing", "severity": "warn", "fixable": true },
+  //   { "rule": "*-spaces", "severity": "warn", "fixable": true },
+  //   { "rule": "*-order", "severity": "warn", "fixable": true },
+  //   { "rule": "*-dangle", "severity": "warn", "fixable": true },
+  //   { "rule": "*-newline", "severity": "warn", "fixable": true },
+  //   { "rule": "*quotes", "severity": "warn", "fixable": true },
+  //   { "rule": "*semi", "severity": "warn", "fixable": true }
+  // ],
+  "eslint.lintTask.enable": true,
+  "eslint.lintTask.options": "-c ./eslint.config.mjs --quiet src",
+  // Enable eslint for all supported languages
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact",
+    "vue",
+    "html",
+    "markdown",
+    "json",
+    "json5",
+    "jsonc",
+    "yaml",
+    "toml",
+    "xml",
+    "gql",
+    "graphql",
+    "astro",
+    "css",
+    "less",
+    "scss",
+    "pcss",
+    "postcss"
+  ]
+}

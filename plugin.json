@@ -1,0 +1,30 @@
+{
+  "name": "siyuan-embed-excalidraw",
+  "author": "Yuxin Zhao",
+  "url": "https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw",
+  "version": "0.1.0",
+  "minAppVersion": "3.3.0",
+  "disabledInPublish": true,
+  "backends": [
+    "all"
+  ],
+  "frontends": [
+    "all"
+  ],
+  "displayName": {
+    "default": "「Embed Series」Excalidraw",
+    "zh_CN": "「嵌入式系列」Excalidraw"
+  },
+  "description": {
+    "default": "「Embed Series」Create editable SVG Image with Excalidraw",
+    "zh_CN": "「嵌入式系列」使用Excalidraw创建可编辑的高质量矢量图"
+  },
+  "readme": {
+    "default": "README.md",
+    "zh_CN": "README_zh_CN.md"
+  },
+  "funding": {
+    "custom": []
+  },
+  "keywords": []
+}
