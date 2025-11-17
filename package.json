@@ -17,7 +17,7 @@
     "release:major": "node ./release.js --mode=major",
     "build:app": "vite build --config vite.app.config.ts",
     "build:plugin": "vite build",
-    "build": "build:app && build:plugin"
+    "build": "pnpm build:app && pnpm build:plugin"
   },
   "dependencies": {
     "@excalidraw/excalidraw": "^0.18.0",
