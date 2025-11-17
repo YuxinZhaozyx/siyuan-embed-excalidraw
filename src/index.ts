@@ -77,12 +77,15 @@ export default class ExcalidrawPlugin extends Plugin {
 
     this._globalKeyDownHandler = this.globalKeyDownHandler.bind(this);
     document.documentElement.addEventListener("keydown", this._globalKeyDownHandler);
+
+    this.reloadAllEditor();
   }
 
   onunload() {
     if (this._mutationObserver) this._mutationObserver.disconnect();
     if (this._openMenuImageHandler) this.eventBus.off("open-menu-image", this._openMenuImageHandler);
     if (this._globalKeyDownHandler) document.documentElement.removeEventListener("keydown", this._globalKeyDownHandler);
+    this.reloadAllEditor();
   }
 
   uninstall() {
@@ -160,7 +163,7 @@ export default class ExcalidrawPlugin extends Plugin {
     (dialog.element.querySelector(".b3-dialog__action [data-type='confirm']") as HTMLElement).addEventListener("click", () => {
       this.data[STORAGE_NAME].labelDisplay = (dialog.element.querySelector("[data-type='labelDisplay']") as HTMLSelectElement).value;
       this.saveData(STORAGE_NAME, this.data[STORAGE_NAME]);
-      getAllEditor().forEach((protyle) => { protyle.reload(false); });
+      this.reloadAllEditor();
       dialog.destroy();
     });
   }
@@ -429,6 +432,10 @@ export default class ExcalidrawPlugin extends Plugin {
     dialogDestroyCallbacks.push(() => {
       window.removeEventListener("message", messageEventHandler);
     });
+  }
+
+  public reloadAllEditor() {
+    getAllEditor().forEach((protyle) => { protyle.reload(false); });
   }
 
 }
