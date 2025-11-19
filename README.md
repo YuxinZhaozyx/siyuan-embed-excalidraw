@@ -32,7 +32,7 @@ This plugin serves as the fourth plugin in the **Embed Series**, aiming to provi
 - [x] Support dark mode
 - [ ] Support SiYuan block in Excalidraw
 
-> If you have additional feature requests or suggestions, feel free to [open an issue on GitHub](https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw/issues) or [post in the SiYuan community](https://ld246.com/tag/siyuan) to request support for additional packages.
+> If you have additional feature requests or suggestions, feel free to [open an issue on GitHub](https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw/issues) or [post in the SiYuan community](https://ld246.com/article/1763408501738) to request support for additional packages.
 
 ## Effects on PC
 
@@ -65,6 +65,8 @@ The label of an Excalidraw image block can be configured in the plugin settings.
 
 ## Changelog
 
++ v0.1.2
+    + Optimize: import library
 + v0.1.1
     + Optimize: reload all editors when confirming settings change
 + v0.1.0

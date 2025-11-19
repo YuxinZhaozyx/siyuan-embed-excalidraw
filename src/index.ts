@@ -90,6 +90,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
   uninstall() {
     this.removeData(STORAGE_NAME);
+    this.removeData("library.excalidrawlib");
   }
 
   openSetting() {
@@ -408,6 +409,10 @@ export default class ExcalidrawPlugin extends Plugin {
       });
     }
 
+    const onBrowseLibrary = (message: any) => {
+      dialog.destroy();
+    };
+
     const messageEventHandler = (event) => {
       if (event.data && event.data.length > 0) {
         try {
@@ -419,6 +424,9 @@ export default class ExcalidrawPlugin extends Plugin {
             }
             else if (message.event == "autosave") {
               onSave(message);
+            }
+            else if (message.event == "browseLibrary") {
+              onBrowseLibrary(message);
             }
           }
         }
