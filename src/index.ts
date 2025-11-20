@@ -413,6 +413,47 @@ export default class ExcalidrawPlugin extends Plugin {
       dialog.destroy();
     };
 
+    const onExit = (message: any) => {
+      dialog.destroy();
+    };
+
+    let isFullscreen = false;
+    let dialogContainerStyle = {
+      width: "100vw",
+      height: "100vh",
+      maxWidth: "unset",
+      maxHeight: "unset",
+      top: "auto",
+      left: "auto",
+    };
+    const switchFullscreen = () => {
+      const dialogContainerElement = dialog.element.querySelector('.b3-dialog__container') as HTMLElement;
+      if (dialogContainerElement) {
+        isFullscreen = !isFullscreen;
+        if (isFullscreen) {
+          dialogContainerStyle.width = dialogContainerElement.style.width;
+          dialogContainerStyle.height = dialogContainerElement.style.height;
+          dialogContainerStyle.maxWidth = dialogContainerElement.style.maxWidth;
+          dialogContainerStyle.maxHeight = dialogContainerElement.style.maxHeight;
+          dialogContainerStyle.top = dialogContainerElement.style.top;
+          dialogContainerStyle.left = dialogContainerElement.style.left;
+          dialogContainerElement.style.width = "100vw";
+          dialogContainerElement.style.height = "100vh";
+          dialogContainerElement.style.maxWidth = "unset";
+          dialogContainerElement.style.maxHeight = "unset";
+          dialogContainerElement.style.top = "0";
+          dialogContainerElement.style.left = "0";
+        } else {
+          dialogContainerElement.style.width = dialogContainerStyle.width;
+          dialogContainerElement.style.height = dialogContainerStyle.height;
+          dialogContainerElement.style.maxWidth = dialogContainerStyle.maxWidth;
+          dialogContainerElement.style.maxHeight = dialogContainerStyle.maxHeight;
+          dialogContainerElement.style.top = dialogContainerStyle.top;
+          dialogContainerElement.style.left = dialogContainerStyle.left;
+        }
+      }
+    }
+
     const messageEventHandler = (event) => {
       if (event.data && event.data.length > 0) {
         try {
@@ -427,6 +468,12 @@ export default class ExcalidrawPlugin extends Plugin {
             }
             else if (message.event == "browseLibrary") {
               onBrowseLibrary(message);
+            }
+            else if (message.event == "exit") {
+              onExit(message);
+            }
+            else if (message.event == "toggleFullscreen") {
+              switchFullscreen();
             }
           }
         }
