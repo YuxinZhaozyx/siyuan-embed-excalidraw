@@ -151,6 +151,7 @@ enum SyFrontendTypes {
 interface ExcalidrawImageInfo {
   imageURL: string;
   data: string;
+  format: "svg" | "png";
 }
 
 interface SettingItem {

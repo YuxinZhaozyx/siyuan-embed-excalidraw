@@ -4,5 +4,9 @@
   "labelDisplayDescription": "图像块右上角的标签显示",
   "noLabel": "不显示标签",
   "showLabelAlways": "始终显示标签",
-  "showLabelOnHover": "悬停时显示标签"
+  "showLabelOnHover": "悬停时显示标签",
+  "embedImageFormat": "嵌入图像格式",
+  "embedImageFormatDescription": "插入新的Excalidraw图像的格式",
+  "fullscreenEdit": "全屏编辑",
+  "fullscreenEditDescription": "是否在编辑时全屏显示"
 }

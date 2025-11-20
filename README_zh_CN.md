@@ -33,7 +33,7 @@
 ## 功能
 
 - [x] 无网络离线使用
-- [x] Excalidraw图像以SVG格式存储
+- [x] Excalidraw图像以SVG/PNG格式存储
 - [x] Excalidraw图像可编辑
 - [x] 支持导出PDF
 - [x] 支持移动端编辑
@@ -44,6 +44,8 @@
 
 ## 使用指南
 
+**设置Excalidraw图像存储格式：** 在插件设置中修改Excalidraw图像存储格式（只影响新创建的图像），可以选择 SVG/PNG。
+
 **创建Excalidraw图像：** 在编辑器中输入 `/excalidraw` 命令即可创建新Excalidraw图像。
 
 **编辑Excalidraw图像：** 右键/点击图像右上角的菜单按钮，当图像被识别为合法的Excalidraw图像时，菜单中会显示 `编辑Excalidraw` 的选项，点击即可打开编辑窗口。
@@ -52,11 +54,15 @@
 
 **从其他来源迁移：** 
 
-+ 方案1：只需要在任意Excalidraw平台导出SVG图像时勾选 `包含画布数据` 选项，再把SVG图像拖入思源笔记中即可，不用担心以后没法再迁移，这个SVG图像也是可以导入到任意Excalidraw平台再次编辑的。
++ 方案1：只需要在任意Excalidraw平台导出SVG/PNG图像时勾选 `包含画布数据` 选项，再把SVG图像拖入思源笔记中即可，不用担心以后没法再迁移，这个SVG/PNG图像也是可以导入到任意Excalidraw平台再次编辑的。
 + 方案2：在任意Excalidraw平台内复制全部内容，在思源笔记中输入 `/excalidraw` 命令创建新Excalidraw图像，然后将复制的内容粘贴进弹出Excalidraw窗口中即可。
 
 ## 更新日志
 
++ v0.2.0
+    + 新增功能：在配置中选择以SVG还是PNG存储图像
+    + 新增功能：全屏编辑
+    + 优化：简化菜单
 + v0.1.2
     + 优化：素材库的在线导入
 + v0.1.1

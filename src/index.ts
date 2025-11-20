@@ -8,8 +8,8 @@ import {
 } from "siyuan";
 import "@/index.scss";
 import PluginInfoString from '@/../plugin.json';
-import { HTMLToElement } from "./utils";
-import defaultImageContent from "@/../default.svg?raw";
+import { base64ToUnicode, blobToDataURL, dataURLToBlob, HTMLToElement } from "@/utils";
+import defaultImageContent from "@/default.json";
 
 let PluginInfo = {
   version: '',
@@ -163,6 +163,8 @@ export default class ExcalidrawPlugin extends Plugin {
     });
     (dialog.element.querySelector(".b3-dialog__action [data-type='confirm']") as HTMLElement).addEventListener("click", () => {
       this.data[STORAGE_NAME].labelDisplay = (dialog.element.querySelector("[data-type='labelDisplay']") as HTMLSelectElement).value;
+      this.data[STORAGE_NAME].embedImageFormat = (dialog.element.querySelector("[data-type='embedImageFormat']") as HTMLSelectElement).value;
+      this.data[STORAGE_NAME].fullscreenEdit = (dialog.element.querySelector("[data-type='fullscreenEdit']") as HTMLInputElement).checked;
       this.saveData(STORAGE_NAME, this.data[STORAGE_NAME]);
       this.reloadAllEditor();
       dialog.destroy();
@@ -171,17 +173,16 @@ export default class ExcalidrawPlugin extends Plugin {
 
   private async initSetting() {
     await this.loadData(STORAGE_NAME);
-    if (!this.data[STORAGE_NAME]) {
-      this.data[STORAGE_NAME] = {
-        labelDisplay: "showLabelOnHover",
-      };
-    }
+    if (!this.data[STORAGE_NAME]) this.data[STORAGE_NAME] = {};
+    if (typeof this.data[STORAGE_NAME].labelDisplay === 'undefined') this.data[STORAGE_NAME].labelDisplay = "showLabelOnHover";
+    if (typeof this.data[STORAGE_NAME].embedImageFormat === 'undefined') this.data[STORAGE_NAME].embedImageFormat = "svg";
+    if (typeof this.data[STORAGE_NAME].fullscreenEdit === 'undefined') this.data[STORAGE_NAME].fullscreenEdit = false;
 
     this.settingItems = [
       {
-        title: "标签显示",
+        title: this.i18n.labelDisplay,
         direction: "column",
-        description: "图像块右上角的标签显示（修改后需刷新文档生效）",
+        description: this.i18n.labelDisplayDescription,
         createActionElement: () => {
           const options = ["noLabel", "showLabelAlways", "showLabelOnHover"];
           const optionsHTML = options.map(option => {
@@ -189,6 +190,29 @@ export default class ExcalidrawPlugin extends Plugin {
             return `<option value="${option}"${isSelected ? " selected" : ""}>${this.i18n[option]}</option>`;
           }).join("");
           return HTMLToElement(`<select class="b3-select fn__flex-center" data-type="labelDisplay">${optionsHTML}</select>`);
+        },
+      },
+      {
+        title: this.i18n.embedImageFormat,
+        direction: "column",
+        description: this.i18n.embedImageFormatDescription,
+        createActionElement: () => {
+          const options = ["svg", "png"];
+          const optionsHTML = options.map(option => {
+            const isSelected = String(option) === String(this.data[STORAGE_NAME].embedImageFormat);
+            return `<option value="${option}"${isSelected ? " selected" : ""}>${option}</option>`;
+          }).join("");
+          return HTMLToElement(`<select class="b3-select fn__flex-center" data-type="embedImageFormat">${optionsHTML}</select>`);
+        },
+      },
+      {
+        title: this.i18n.fullscreenEdit,
+        direction: "column",
+        description: this.i18n.fullscreenEditDescription,
+        createActionElement: () => {
+          const element = HTMLToElement(`<input type="checkbox" class="b3-switch fn__flex-center" data-type="fullscreenEdit">`) as HTMLInputElement;
+          element.checked = this.data[STORAGE_NAME].fullscreenEdit;
+          return element;
         },
       },
     ];
@@ -244,36 +268,39 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public async getExcalidrawImageInfo(imageURL: string, reload: boolean): Promise<ExcalidrawImageInfo | null> {
-    const imageURLRegex = /^assets\/.+\.svg$/;
+    const imageURLRegex = /^assets\/.+\.(?:svg|png)$/;
     if (!imageURLRegex.test(imageURL)) return null;
 
-    const svgContent = await this.getExcalidrawImage(imageURL, reload);
-    if (!svgContent) return null;
+    const imageContent = await this.getExcalidrawImage(imageURL, reload);
+    if (!imageContent) return null;
 
-    if (!svgContent.includes("svg-source:excalidraw")) return null;
+    if (!base64ToUnicode(imageContent.split(',').pop()).includes("application/vnd.excalidraw+json")) return null;
 
     const imageInfo: ExcalidrawImageInfo = {
       imageURL: imageURL,
-      data: svgContent,
+      data: imageContent,
+      format: imageURL.endsWith(".svg") ? "svg" : "png",
     }
     return imageInfo;
   }
 
-  public getPlaceholderImageContent(): string {
-    let imageContent = defaultImageContent;
-    imageContent = imageContent + `\n<!-- updated="${new Date().toISOString()}" -->`;
+  public getPlaceholderImageContent(format: 'svg' | 'png'): string {
+    let imageContent = defaultImageContent[format];
     return imageContent;
   }
 
   public newExcalidrawImage(blockID: string, callback?: (imageInfo: ExcalidrawImageInfo) => void) {
-    const imageName = 'excalidraw-image.svg';
-    const placeholderImageContent = this.getPlaceholderImageContent();
-    const blob = new Blob([placeholderImageContent], { type: 'image/svg+xml' });
-    const file = new File([blob], imageName, { type: 'image/svg+xml' });
+    const format = this.data[STORAGE_NAME].embedImageFormat;
+    const imageName = `excalidraw-image-${window.Lute.NewNodeID()}.${format}`;
+    const placeholderImageContent = this.getPlaceholderImageContent(format);
+    const blob = dataURLToBlob(placeholderImageContent);
+    const file = new File([blob], imageName, { type: blob.type });
     const formData = new FormData();
-    formData.append('file[]', file);
-    fetchPost('/api/asset/upload', formData, (response) => {
-      const imageURL = response.data.succMap[imageName];
+    formData.append('path', `data/assets/${imageName}`);
+    formData.append('file', file);
+    formData.append('isDir', 'false');
+    fetchPost('/api/file/putFile', formData, () => {
+      const imageURL = `assets/${imageName}`;
       fetchPost('/api/block/updateBlock', {
         id: blockID,
         data: `![](${imageURL})`,
@@ -282,6 +309,7 @@ export default class ExcalidrawPlugin extends Plugin {
       const imageInfo: ExcalidrawImageInfo = {
         imageURL: imageURL,
         data: placeholderImageContent,
+        format: format,
       };
       if (callback) {
         callback(imageInfo);
@@ -292,16 +320,16 @@ export default class ExcalidrawPlugin extends Plugin {
   public async getExcalidrawImage(imageURL: string, reload: boolean): Promise<string> {
     const response = await fetch(imageURL, { cache: reload ? 'reload' : 'default' });
     if (!response.ok) return "";
-    const svgContent = await response.text();
-    return svgContent;
+    const blob = await response.blob();
+    return await blobToDataURL(blob);
   }
 
   public updateExcalidrawImage(imageInfo: ExcalidrawImageInfo, callback?: (response: IWebSocketData) => void) {
     if (!imageInfo.data) {
-      imageInfo.data = this.getPlaceholderImageContent();
+      imageInfo.data = this.getPlaceholderImageContent(imageInfo.format);
     }
-    const blob = new Blob([imageInfo.data], { type: 'image/svg+xml' });
-    const file = new File([blob], imageInfo.imageURL.split('/').pop(), { type: 'image/svg+xml' });
+    const blob = dataURLToBlob(imageInfo.data);
+    const file = new File([blob], imageInfo.imageURL.split('/').pop(), { type: blob.type });
     const formData = new FormData();
     formData.append("path", 'data/' + imageInfo.imageURL);
     formData.append("file", file);
@@ -452,6 +480,9 @@ export default class ExcalidrawPlugin extends Plugin {
           dialogContainerElement.style.left = dialogContainerStyle.left;
         }
       }
+    }
+    if (this.data[STORAGE_NAME].fullscreenEdit) {
+      switchFullscreen();
     }
 
     const messageEventHandler = (event) => {

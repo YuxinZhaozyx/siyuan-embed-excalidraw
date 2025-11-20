@@ -5,6 +5,7 @@ import {
   Excalidraw,
   loadFromBlob,
   exportToSvg,
+  exportToBlob,
   parseLibraryTokensFromUrl,
   loadLibraryFromBlob,
   mergeLibraryItems,
@@ -12,11 +13,13 @@ import {
   MainMenu,
 } from '@excalidraw/excalidraw';
 import '@excalidraw/excalidraw/index.css';
+import { blobToDataURL, dataURLToBlob, mimeTypeOfDataURL, unicodeToBase64 } from '../src/utils';
 
 window.EXCALIDRAW_ASSET_PATH = '/plugins/siyuan-embed-excalidraw/app/';
 window.EXCALIDRAW_LIBRARY_PATH = '/data/storage/petal/siyuan-embed-excalidraw/library.excalidrawlib';
 const urlParams = new URLSearchParams(window.location.search);
 let excalidrawAPI: any;
+let currentMimeType = 'image/svg+xml';
 
 const postMessage = (message: any) => {
   window.parent.postMessage(JSON.stringify(message), '*');
@@ -26,19 +29,36 @@ const App = (props: { initialData: any }) => {
   // 300ms内没有修改才保存
   const debouncedSave = React.useCallback(
     debounce(async () => {
-      const svg = await exportToSvg({
-        elements: excalidrawAPI.getSceneElements(),
-        appState: {
-          ...excalidrawAPI.getAppState(),
-          exportWithDarkMode: false,
-          exportEmbedScene: true,
-          exportBackground: false,
-        },
-        files: excalidrawAPI.getFiles(),
-      });
+      let imageDataURL = '';
+      if (currentMimeType === 'image/svg+xml') {
+        const svg = await exportToSvg({
+          elements: excalidrawAPI.getSceneElements(),
+          appState: {
+            ...excalidrawAPI.getAppState(),
+            exportWithDarkMode: false,
+            exportEmbedScene: true,
+            exportBackground: false,
+          },
+          files: excalidrawAPI.getFiles(),
+        });
+        imageDataURL = `data:${currentMimeType};base64,${unicodeToBase64(svg.outerHTML)}`
+      } else {
+        const blob = await exportToBlob({
+          elements: excalidrawAPI.getSceneElements(),
+          appState: {
+            ...excalidrawAPI.getAppState(),
+            exportWithDarkMode: false,
+            exportEmbedScene: true,
+            exportBackground: false,
+          },
+          files: excalidrawAPI.getFiles(),
+          mimeType: currentMimeType,
+        });
+        imageDataURL = await blobToDataURL(blob);
+      }
       postMessage({
         event: 'autosave',
-        data: svg.outerHTML,
+        data: imageDataURL,
       });
     }, 300),
     []
@@ -107,7 +127,8 @@ const App = (props: { initialData: any }) => {
 };
 
 const onLoad = async (message: any) => {
-  const blob = new Blob([message.data], { type: 'image/svg+xml' });
+  currentMimeType = mimeTypeOfDataURL(message.data);
+  const blob = dataURLToBlob(message.data);
   const contents = await loadFromBlob(blob, null, null);
   createRoot(document.getElementById('root')!).render(React.createElement(App, {
     initialData: {
