@@ -38,6 +38,9 @@
 - [x] 支持导出PDF
 - [x] 支持移动端编辑
 - [x] 图像支持暗黑模式
+- [x] 全屏编辑
+- [x] 明暗模式
+- [x] Tab/Dialog窗口编辑
 - [ ] 支持Excalidraw中显示思源文档内容
 
 > 如有更多需求/建议欢迎[在GitHub仓库中提issue](https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw/issues)或[在思源笔记社区中发帖](https://ld246.com/article/1763408501738)
@@ -59,6 +62,9 @@
 
 ## 更新日志
 
++ v0.3.0
+    + 新增功能：支持设置Dialog/Tab窗口编辑
+    + 新增功能：支持设置明暗主题
 + v0.2.0
     + 新增功能：在配置中选择以SVG还是PNG存储图像
     + 新增功能：全屏编辑

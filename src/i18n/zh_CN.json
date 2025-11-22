@@ -8,5 +8,9 @@
   "embedImageFormat": "嵌入图像格式",
   "embedImageFormatDescription": "插入新的Excalidraw图像的格式",
   "fullscreenEdit": "全屏编辑",
-  "fullscreenEditDescription": "是否在编辑时全屏显示"
+  "fullscreenEditDescription": "是否在编辑时全屏显示",
+  "editWindow": "编辑窗口",
+  "editWindowDescription": "编辑窗口的形式",
+  "themeMode": "主题模式",
+  "themeModeDescription": "窗口的主题"
 }

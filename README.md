@@ -29,7 +29,10 @@ This plugin serves as the fourth plugin in the **Embed Series**, aiming to provi
 - [x] Edit Excalidraw image
 - [x] Support export to PDF
 - [x] Support for mobile devices
-- [x] Support dark mode
+- [x] Support dark mode for image display
+- [x] Fullscreen edit
+- [x] Light/Dark mode
+- [x] Edit in Tab/Dialog
 - [ ] Support SiYuan block in Excalidraw
 
 > If you have additional feature requests or suggestions, feel free to [open an issue on GitHub](https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw/issues) or [post in the SiYuan community](https://ld246.com/article/1763408501738) to request support for additional packages.
@@ -69,6 +72,9 @@ The label of an Excalidraw image block can be configured in the plugin settings.
 
 ## Changelog
 
++ v0.3.0
+    + Feature: configuration of edit window: Tab / Dialog
+    + Feature: configuration of theme: Light / Dark
 + v0.2.0
     + Feature: select SVG or PNG storage for Excalidraw image
     + Feature: fullscreen edit

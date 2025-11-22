@@ -2,7 +2,7 @@
   "name": "siyuan-embed-excalidraw",
   "author": "Yuxin Zhao",
   "url": "https://github.com/YuxinZhaozyx/siyuan-embed-excalidraw",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "minAppVersion": "3.0.0",
   "disabledInPublish": true,
   "backends": [

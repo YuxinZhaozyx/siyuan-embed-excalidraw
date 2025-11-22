@@ -4,11 +4,13 @@ import {
   getFrontend,
   fetchPost,
   IWebSocketData,
-  getAllEditor
+  getAllEditor,
+  getAllModels,
+  openTab,
 } from "siyuan";
 import "@/index.scss";
 import PluginInfoString from '@/../plugin.json';
-import { base64ToUnicode, blobToDataURL, dataURLToBlob, HTMLToElement } from "@/utils";
+import { base64ToUnicode, blobToDataURL, dataURLToBlob, HTMLToElement, unicodeToBase64 } from "@/utils";
 import defaultImageContent from "@/default.json";
 
 let PluginInfo = {
@@ -44,6 +46,7 @@ export default class ExcalidrawPlugin extends Plugin {
   private _globalKeyDownHandler;
 
   private settingItems: SettingItem[];
+  public EDIT_TAB_TYPE = "excalidraw-edit-tab";
 
   async onload() {
     this.initMetaInfo();
@@ -61,13 +64,19 @@ export default class ExcalidrawPlugin extends Plugin {
       }
     });
 
+    this.setupEditTab();
+
     this.protyleSlash = [{
       filter: ["excalidraw"],
       id: "excalidraw",
       html: `<div class="b3-list-item__first"><svg class="b3-list-item__graphic"><use xlink:href="#iconImage"></use></svg><span class="b3-list-item__text">Excalidraw</span></div>`,
       callback: (protyle, nodeElement) => {
         this.newExcalidrawImage(nodeElement.dataset.nodeId, (imageInfo) => {
-          this.openEditDialog(imageInfo);
+          if (!this.isMobile && this.data[STORAGE_NAME].editWindow === 'tab') {
+            this.openEditTab(imageInfo);
+          } else {
+            this.openEditDialog(imageInfo);
+          }
         });
       },
     }];
@@ -79,6 +88,7 @@ export default class ExcalidrawPlugin extends Plugin {
     document.documentElement.addEventListener("keydown", this._globalKeyDownHandler);
 
     this.reloadAllEditor();
+    this.removeAllExcalidrawTab();
   }
 
   onunload() {
@@ -165,8 +175,11 @@ export default class ExcalidrawPlugin extends Plugin {
       this.data[STORAGE_NAME].labelDisplay = (dialog.element.querySelector("[data-type='labelDisplay']") as HTMLSelectElement).value;
       this.data[STORAGE_NAME].embedImageFormat = (dialog.element.querySelector("[data-type='embedImageFormat']") as HTMLSelectElement).value;
       this.data[STORAGE_NAME].fullscreenEdit = (dialog.element.querySelector("[data-type='fullscreenEdit']") as HTMLInputElement).checked;
+      this.data[STORAGE_NAME].editWindow = (dialog.element.querySelector("[data-type='editWindow']") as HTMLSelectElement).value;
+      this.data[STORAGE_NAME].themeMode = (dialog.element.querySelector("[data-type='themeMode']") as HTMLSelectElement).value;
       this.saveData(STORAGE_NAME, this.data[STORAGE_NAME]);
       this.reloadAllEditor();
+      this.removeAllExcalidrawTab();
       dialog.destroy();
     });
   }
@@ -177,6 +190,8 @@ export default class ExcalidrawPlugin extends Plugin {
     if (typeof this.data[STORAGE_NAME].labelDisplay === 'undefined') this.data[STORAGE_NAME].labelDisplay = "showLabelOnHover";
     if (typeof this.data[STORAGE_NAME].embedImageFormat === 'undefined') this.data[STORAGE_NAME].embedImageFormat = "svg";
     if (typeof this.data[STORAGE_NAME].fullscreenEdit === 'undefined') this.data[STORAGE_NAME].fullscreenEdit = false;
+    if (typeof this.data[STORAGE_NAME].editWindow === 'undefined') this.data[STORAGE_NAME].editWindow = 'dialog';
+    if (typeof this.data[STORAGE_NAME].themeMode === 'undefined') this.data[STORAGE_NAME].themeMode = "themeLight";
 
     this.settingItems = [
       {
@@ -213,6 +228,32 @@ export default class ExcalidrawPlugin extends Plugin {
           const element = HTMLToElement(`<input type="checkbox" class="b3-switch fn__flex-center" data-type="fullscreenEdit">`) as HTMLInputElement;
           element.checked = this.data[STORAGE_NAME].fullscreenEdit;
           return element;
+        },
+      },
+      {
+        title: this.i18n.editWindow,
+        direction: "column",
+        description: this.i18n.editWindowDescription,
+        createActionElement: () => {
+          const options = ["dialog", "tab"];
+          const optionsHTML = options.map(option => {
+            const isSelected = String(option) === String(this.data[STORAGE_NAME].editWindow);
+            return `<option value="${option}"${isSelected ? " selected" : ""}>${option}</option>`;
+          }).join("");
+          return HTMLToElement(`<select class="b3-select fn__flex-center" data-type="editWindow">${optionsHTML}</select>`);
+        },
+      },
+      {
+        title: this.i18n.themeMode,
+        direction: "column",
+        description: this.i18n.themeModeDescription,
+        createActionElement: () => {
+          const options = ["themeLight", "themeDark", "themeOS"];
+          const optionsHTML = options.map(option => {
+            const isSelected = String(option) === String(this.data[STORAGE_NAME].themeMode);
+            return `<option value="${option}"${isSelected ? " selected" : ""}>${window.siyuan.languages[option]}</option>`;
+          }).join("");
+          return HTMLToElement(`<select class="b3-select fn__flex-center" data-type="themeMode">${optionsHTML}</select>`);
         },
       },
     ];
@@ -372,7 +413,11 @@ export default class ExcalidrawPlugin extends Plugin {
           label: `${this.i18n.editExcalidraw}`,
           index: 1,
           click: () => {
-            this.openEditDialog(imageInfo);
+            if (!this.isMobile && this.data[STORAGE_NAME].editWindow === 'tab') {
+              this.openEditTab(imageInfo);
+            } else {
+              this.openEditDialog(imageInfo);
+            }
           }
         });
       }
@@ -386,13 +431,108 @@ export default class ExcalidrawPlugin extends Plugin {
     }
   };
 
+  public setupEditTab() {
+    const that = this;
+    this.addTab({
+      type: this.EDIT_TAB_TYPE,
+      init() {
+        const imageInfo: ExcalidrawImageInfo = this.data;
+        const iframeID = unicodeToBase64(`excalidraw-edit-tab-${imageInfo.imageURL}`);
+        const editTabHTML = `
+<div class="excalidraw-edit-tab">
+    <iframe src="/plugins/siyuan-embed-excalidraw/app/?lang=${window.siyuan.config.lang.replace('_', '-')}${that.isDarkMode() ? "&dark=1" : ""}&iframeID=${iframeID}"></iframe>
+</div>`;
+        this.element.innerHTML = editTabHTML;
+
+        const iframe = this.element.querySelector("iframe");
+        iframe.focus();
+
+        const postMessage = (message: any) => {
+          if (!iframe.contentWindow) return;
+          iframe.contentWindow.postMessage(JSON.stringify(message), '*');
+        };
+
+        const onInit = (message: any) => {
+          postMessage({
+            action: "load",
+            data: imageInfo.data,
+          });
+        }
+
+        const onSave = (message: any) => {
+          imageInfo.data = message.data;
+          that.updateExcalidrawImage(imageInfo, () => {
+            fetch(imageInfo.imageURL, { cache: 'reload' }).then(() => {
+              document.querySelectorAll(`img[data-src='${imageInfo.imageURL}']`).forEach(imageElement => {
+                (imageElement as HTMLImageElement).src = imageInfo.imageURL;
+              });
+            });
+          });
+        }
+
+        const onBrowseLibrary = (message: any) => {
+          this.tab.close();
+        };
+
+        const onExit = (message: any) => {
+          this.tab.close();
+        };
+
+        const messageEventHandler = (event) => {
+          if (!((event.source.location.href as string).includes(`iframeID=${iframeID}`))) return;
+          if (event.data && event.data.length > 0) {
+            try {
+              var message = JSON.parse(event.data);
+              if (message != null) {
+                // console.log(message.event);
+                if (message.event == "init") {
+                  onInit(message);
+                }
+                else if (message.event == "autosave") {
+                  onSave(message);
+                }
+                else if (message.event == "browseLibrary") {
+                  onBrowseLibrary(message);
+                }
+                else if (message.event == "exit") {
+                  onExit(message);
+                }
+              }
+            }
+            catch (err) {
+              console.error(err);
+            }
+          }
+        };
+
+        window.addEventListener("message", messageEventHandler);
+        this.beforeDestroy = () => {
+          window.removeEventListener("message", messageEventHandler);
+        };
+      }
+    });
+  }
+
+  public openEditTab(imageInfo: ExcalidrawImageInfo) {
+    openTab({
+      app: this.app,
+      custom: {
+        id: this.name + this.EDIT_TAB_TYPE,
+        icon: "iconEdit",
+        title: `${imageInfo.imageURL.split('/').pop()}`,
+        data: imageInfo,
+      }
+    })
+  }
+
   public openEditDialog(imageInfo: ExcalidrawImageInfo) {
+    const iframeID = unicodeToBase64(`excalidraw-edit-dialog-${imageInfo.imageURL}`);
     const editDialogHTML = `
 <div class="excalidraw-edit-dialog">
     <div class="edit-dialog-header resize__move"></div>
     <div class="edit-dialog-container">
         <div class="edit-dialog-editor">
-            <iframe src="/plugins/siyuan-embed-excalidraw/app/?lang=${window.siyuan.config.lang.replace('_', '-')}"></iframe>
+            <iframe src="/plugins/siyuan-embed-excalidraw/app/?lang=${window.siyuan.config.lang.replace('_', '-')}&fullscreenBtn=1${this.isDarkMode() ? "&dark=1" : ""}&iframeID=${iframeID}"></iframe>
         </div>
         <div class="fn__hr--b"></div>
     </div>
@@ -486,6 +626,7 @@ export default class ExcalidrawPlugin extends Plugin {
     }
 
     const messageEventHandler = (event) => {
+      if (!((event.source.location.href as string).includes(`iframeID=${iframeID}`))) return;
       if (event.data && event.data.length > 0) {
         try {
           var message = JSON.parse(event.data);
@@ -524,4 +665,15 @@ export default class ExcalidrawPlugin extends Plugin {
     getAllEditor().forEach((protyle) => { protyle.reload(false); });
   }
 
+  public removeAllExcalidrawTab() {
+    getAllModels().custom.forEach((custom: any) => {
+      if (custom.type == this.name + this.EDIT_TAB_TYPE) {
+        custom.tab?.close();
+      }
+    })
+  }
+
+  public isDarkMode(): boolean {
+    return this.data[STORAGE_NAME].themeMode === 'themeDark' || (this.data[STORAGE_NAME].themeMode === 'themeOS' && window.siyuan.config.appearance.mode === 1);
+  }
 }
