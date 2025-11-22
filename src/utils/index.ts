@@ -20,7 +20,12 @@ export function unescapeHTML(str: string): string {
 export function unicodeToBase64(str: string): string {
   const encoder = new TextEncoder();
   const bytes = encoder.encode(str);
-  return btoa(String.fromCharCode(...bytes));
+  let binary = '';
+  const len = bytes.length;
+  for (let i = 0; i < len; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 export function base64ToUnicode(base64: string): string {
@@ -43,7 +48,11 @@ export function base64ToBuffer(base64: string): ArrayBuffer {
 }
 
 export function bufferToBase64(buffer: ArrayBuffer): string {
-  const binary = String.fromCharCode(...new Uint8Array(buffer));
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
   return btoa(binary);
 }
 

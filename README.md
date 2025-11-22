@@ -72,6 +72,8 @@ The label of an Excalidraw image block can be configured in the plugin settings.
 
 ## Changelog
 
++ v0.3.3
+    + Fix: unable to save when saving large content
 + v0.3.2
     + Optimize: set Excalidraw data of SVG/PNG placeholder image to empty
 + v0.3.1
