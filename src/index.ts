@@ -461,6 +461,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
         const onSave = (message: any) => {
           imageInfo.data = message.data;
+          imageInfo.data = that.fixImageContent(imageInfo.data);
           that.updateExcalidrawImage(imageInfo, () => {
             fetch(imageInfo.imageURL, { cache: 'reload' }).then(() => {
               document.querySelectorAll(`img[data-src='${imageInfo.imageURL}']`).forEach(imageElement => {
@@ -568,6 +569,7 @@ export default class ExcalidrawPlugin extends Plugin {
 
     const onSave = (message: any) => {
       imageInfo.data = message.data;
+      imageInfo.data = this.fixImageContent(imageInfo.data);
       this.updateExcalidrawImage(imageInfo, () => {
         fetch(imageInfo.imageURL, { cache: 'reload' }).then(() => {
           document.querySelectorAll(`img[data-src='${imageInfo.imageURL}']`).forEach(imageElement => {
@@ -675,5 +677,25 @@ export default class ExcalidrawPlugin extends Plugin {
 
   public isDarkMode(): boolean {
     return this.data[STORAGE_NAME].themeMode === 'themeDark' || (this.data[STORAGE_NAME].themeMode === 'themeOS' && window.siyuan.config.appearance.mode === 1);
+  }
+
+  public fixImageContent(imageDataURL: string) {
+    if (imageDataURL.startsWith('data:image/svg+xml')) {
+      let base64String = imageDataURL.split(',').pop();
+      let svgContent = base64ToUnicode(base64String);
+
+      // 当图像为空时，使用默认的占位图
+      if (/<\/defs>\s*<\/svg>\s*$/.test(svgContent)) {
+        const match = svgContent.match(/<metadata>[\s\S]*?<\/metadata>/i);
+        if (match) {
+          svgContent = base64ToUnicode(this.getPlaceholderImageContent('svg').split(',').pop());
+          svgContent = svgContent.replace(/<metadata>[\s\S]*?<\/metadata>/i, match[0]);
+        }
+      }
+
+      base64String = unicodeToBase64(svgContent);
+      imageDataURL = `data:image/svg+xml;base64,${base64String}`;
+    }
+    return imageDataURL;
   }
 }
