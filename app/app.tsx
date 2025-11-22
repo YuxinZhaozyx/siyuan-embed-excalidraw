@@ -26,41 +26,43 @@ const postMessage = (message: any) => {
 };
 
 const App = (props: { initialData: any }) => {
+  const save = async () => {
+    let imageDataURL = '';
+    if (currentMimeType === 'image/svg+xml') {
+      const svg = await exportToSvg({
+        elements: excalidrawAPI.getSceneElements(),
+        appState: {
+          ...excalidrawAPI.getAppState(),
+          exportWithDarkMode: false,
+          exportEmbedScene: true,
+          exportBackground: false,
+        },
+        files: excalidrawAPI.getFiles(),
+      });
+      imageDataURL = `data:${currentMimeType};base64,${unicodeToBase64(svg.outerHTML)}`
+    } else {
+      const blob = await exportToBlob({
+        elements: excalidrawAPI.getSceneElements(),
+        appState: {
+          ...excalidrawAPI.getAppState(),
+          exportWithDarkMode: false,
+          exportEmbedScene: true,
+          exportBackground: false,
+        },
+        files: excalidrawAPI.getFiles(),
+        mimeType: currentMimeType,
+      });
+      imageDataURL = await blobToDataURL(blob);
+    }
+    postMessage({
+      event: 'save',
+      data: imageDataURL,
+    });
+  }
+
   // 300ms内没有修改才保存
   const debouncedSave = React.useCallback(
-    debounce(async () => {
-      let imageDataURL = '';
-      if (currentMimeType === 'image/svg+xml') {
-        const svg = await exportToSvg({
-          elements: excalidrawAPI.getSceneElements(),
-          appState: {
-            ...excalidrawAPI.getAppState(),
-            exportWithDarkMode: false,
-            exportEmbedScene: true,
-            exportBackground: false,
-          },
-          files: excalidrawAPI.getFiles(),
-        });
-        imageDataURL = `data:${currentMimeType};base64,${unicodeToBase64(svg.outerHTML)}`
-      } else {
-        const blob = await exportToBlob({
-          elements: excalidrawAPI.getSceneElements(),
-          appState: {
-            ...excalidrawAPI.getAppState(),
-            exportWithDarkMode: false,
-            exportEmbedScene: true,
-            exportBackground: false,
-          },
-          files: excalidrawAPI.getFiles(),
-          mimeType: currentMimeType,
-        });
-        imageDataURL = await blobToDataURL(blob);
-      }
-      postMessage({
-        event: 'autosave',
-        data: imageDataURL,
-      });
-    }, 300),
+    debounce(save, 300),
     []
   );
 
@@ -106,6 +108,11 @@ const App = (props: { initialData: any }) => {
       }}
     >
       <MainMenu>
+        <MainMenu.Item
+          icon={<svg viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7082" width="32" height="32"><path d="M928 896V314.24c0-8.32-3.488-16.64-9.6-22.72l-187.84-186.24a31.36 31.36 0 0 0-22.4-9.28H672v160c0 52.8-43.2 96-96 96H256c-52.8 0-96-43.2-96-96V96H128c-17.6 0-32 14.4-32 32v768c0 17.6 14.4 32 32 32h64v-288c0-52.8 43.2-96 96-96h448c52.8 0 96 43.2 96 96v288h64c17.632 0 32-14.4 32-32z m-160 32v-288c0-17.6-14.368-32-32-32H288c-17.6 0-32 14.4-32 32v288h512zM224 96v160c0 17.6 14.4 32 32 32h320c17.632 0 32-14.4 32-32V96H224z m739.52 150.08c18.272 17.92 28.48 42.88 28.48 68.16V896c0 52.8-43.2 96-96 96H128c-52.8 0-96-43.2-96-96V128c0-52.8 43.2-96 96-96h580.16c25.632 0 49.632 9.92 67.52 27.84l187.84 186.24zM512 256a32 32 0 0 1-32-32V160a32 32 0 0 1 64 0v64a32 32 0 0 1-32 32z" fill="#404853" p-id="7083"></path></svg>}
+          onSelect={() => { save(); }}
+        >{langCode.startsWith('zh') ? '保存' : 'Save'}
+        </MainMenu.Item>
         <MainMenu.DefaultItems.SaveAsImage />
         <MainMenu.DefaultItems.SearchMenu />
         <MainMenu.Item

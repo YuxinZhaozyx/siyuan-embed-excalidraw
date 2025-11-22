@@ -489,7 +489,7 @@ export default class ExcalidrawPlugin extends Plugin {
                 if (message.event == "init") {
                   onInit(message);
                 }
-                else if (message.event == "autosave") {
+                else if (message.event == "save") {
                   onSave(message);
                 }
                 else if (message.event == "browseLibrary") {
@@ -637,7 +637,7 @@ export default class ExcalidrawPlugin extends Plugin {
             if (message.event == "init") {
               onInit(message);
             }
-            else if (message.event == "autosave") {
+            else if (message.event == "save") {
               onSave(message);
             }
             else if (message.event == "browseLibrary") {
