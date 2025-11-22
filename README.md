@@ -72,6 +72,9 @@ The label of an Excalidraw image block can be configured in the plugin settings.
 
 ## Changelog
 
++ v0.3.1
+    + Feature: placeholder SVG image
+    + Feature: save button in Excalidraw menu
 + v0.3.0
     + Feature: configuration of edit window: Tab / Dialog
     + Feature: configuration of theme: Light / Dark
