@@ -10,7 +10,14 @@ import {
 } from "siyuan";
 import "@/index.scss";
 import PluginInfoString from '@/../plugin.json';
-import { base64ToUnicode, blobToDataURL, dataURLToBlob, HTMLToElement, unicodeToBase64 } from "@/utils";
+import {
+  getImageSizeFromBase64,
+  base64ToUnicode,
+  unicodeToBase64,
+  blobToDataURL,
+  dataURLToBlob,
+  HTMLToElement,
+} from "@/utils";
 import defaultImageContent from "@/default.json";
 
 let PluginInfo = {
@@ -680,21 +687,15 @@ export default class ExcalidrawPlugin extends Plugin {
   }
 
   public fixImageContent(imageDataURL: string) {
-    if (imageDataURL.startsWith('data:image/svg+xml')) {
-      let base64String = imageDataURL.split(',').pop();
-      let svgContent = base64ToUnicode(base64String);
-
-      // 当图像为空时，使用默认的占位图
-      if (/<\/defs>\s*<\/svg>\s*$/.test(svgContent)) {
-        const match = svgContent.match(/<metadata>[\s\S]*?<\/metadata>/i);
-        if (match) {
-          svgContent = base64ToUnicode(this.getPlaceholderImageContent('svg').split(',').pop());
-          svgContent = svgContent.replace(/<metadata>[\s\S]*?<\/metadata>/i, match[0]);
-        }
+    // 当图像为空时，使用默认的占位图
+    const imageSize = getImageSizeFromBase64(imageDataURL);
+    if (imageSize && imageSize.width <= 20 && imageSize.height <= 20) {
+      if (imageDataURL.startsWith('data:image/svg+xml;base64,')) {
+        imageDataURL = this.getPlaceholderImageContent('svg');
       }
-
-      base64String = unicodeToBase64(svgContent);
-      imageDataURL = `data:image/svg+xml;base64,${base64String}`;
+      if (imageDataURL.startsWith('data:image/png;base64,')) {
+        imageDataURL = this.getPlaceholderImageContent('png');
+      }
     }
     return imageDataURL;
   }
