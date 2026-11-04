@@ -65,7 +65,7 @@ export async function captureIframe(
  * 为所有需要处理的元素捕获 iframe
  */
 export async function captureAllIframes(
-  elements: any[],
+  elements: readonly any[],
   iframeCacheMap: Map<string, IframeCache>,
 ): Promise<Map<string, IframeCache>> {
   const elementsToCapture = elements.filter(needsIframeCapture);
@@ -139,7 +139,7 @@ export function createImageFile(
  * 每个 embeddable 元素会被替换成：矩形背景 + SVG 图像
  */
 export function replaceIframesWithImages(
-  elements: any[],
+  elements: readonly any[],
   iframeCacheMap: Map<string, IframeCache>,
   files: any
 ): { elements: any[]; files: any } {

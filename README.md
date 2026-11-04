@@ -85,6 +85,8 @@ The label of an Excalidraw image block can be configured in the plugin settings.
 
 ## Changelog
 
++ v1.1.0
+    + Feature: Updated Excalidraw to 0.18.0-4ce8305, supporting arrow snapping, drag-to-draw shapes, fill colors, and shortcut-key flowchart drawing
 + v1.0.4
     + Optimize: add shortcut for fullscreen
 + v1.0.3

@@ -217,7 +217,7 @@ export function getPNGSize(bytes: Uint8Array): { width: number, height: number }
   };
 }
 
-export function getSVGSize(svg: HTMLElement): { width: number, height: number } | null { 
+export function getSVGSize(svg: HTMLElement | SVGSVGElement): { width: number, height: number } | null {
   if (svg.tagName.toLowerCase() !== 'svg') return null;
 
   // Try getBoundingClientRect-like intrinsic size

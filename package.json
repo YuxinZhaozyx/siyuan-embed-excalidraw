@@ -1,6 +1,6 @@
 {
   "name": "siyuan-embed-excalidraw",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "type": "module",
   "description": "This is a plugin for siyuan",
   "author": "",
@@ -24,7 +24,7 @@
     "build": "pnpm build:app && pnpm build:embed-siyuan && pnpm build:embed-markdown && pnpm build:plugin"
   },
   "dependencies": {
-    "@excalidraw/excalidraw": "^0.18.0",
+    "@excalidraw/excalidraw": "0.18.0-4ce8305",
     "@zumer/snapdom": "^2.0.2",
     "crypto-js": "^4.2.0",
     "lodash": "^4.17.21",

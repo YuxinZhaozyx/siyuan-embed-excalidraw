@@ -4,8 +4,9 @@ import React from 'react';
 import {
   Excalidraw,
   loadFromBlob,
-  exportToSvg,
-  exportToBlob,
+  exportScene,
+  restoreElements,
+  CaptureUpdateAction,
   parseLibraryTokensFromUrl,
   loadLibraryFromBlob,
   mergeLibraryItems,
@@ -13,7 +14,9 @@ import {
   MainMenu,
   viewportCoordsToSceneCoords,
 } from '@excalidraw/excalidraw';
-import { ClipboardData } from '@excalidraw/excalidraw/clipboard';
+import type { ClipboardData } from '@excalidraw/excalidraw/clipboard';
+import type { ExcalidrawEmbeddableElement } from '@excalidraw/excalidraw/element/types';
+import type { ExcalidrawImperativeAPI, ExcalidrawInitialDataState } from '@excalidraw/excalidraw/types';
 import '@excalidraw/excalidraw/index.css';
 import './app.scss';
 import {
@@ -58,9 +61,9 @@ const saveTimeout = 10_000;
 let mimeType = 'image/svg+xml';
 let imageURL = '';
 const exportPadding = 10;
-let savedSvg: HTMLElement | null = null;
+let savedSvg: HTMLElement | SVGSVGElement | null = null;
 let savedPngBinaryArray: Uint8Array | null = null;
-let defaultSvg: HTMLElement | null = null;
+let defaultSvg: HTMLElement | SVGSVGElement | null = null;
 let defaultPngBinaryArray: Uint8Array | null = null;
 let iframeCacheMap = new Map<string, IframeCache>();
 
@@ -105,11 +108,11 @@ const renderEmbeddable = (element: any, appState: any): React.JSX.Element | null
   )
 }
 
-const fixSvgContent = (svg: HTMLElement): HTMLElement => {
+const fixSvgContent = (svg: HTMLElement | SVGSVGElement): HTMLElement | SVGSVGElement => {
   // 当图像为空时，使用默认的占位图
   const imageSize = getSVGSize(svg);
   if (imageSize && imageSize.width <= 20 && imageSize.height <= 20) {
-    svg = defaultSvg as HTMLElement;
+    svg = defaultSvg!;
   }
   return svg;
 }
@@ -157,16 +160,16 @@ const renderImageContentWithOnlyMetadata = async (): Promise<Blob> => {
     // ===== SVG 分支 =====
 
     // a. 导出原始 SVG（包含完整 iframe 渲染）
-    const originalSvg = await exportToSvg({
-      elements: elements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    const originalSvg = await exportScene({
+      type: 'svg',
+      data: { elements: elements, appState, files: files },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
+        renderEmbeddables: false,
       },
-      files: files,
-      renderEmbeddables: false,
     });
 
     // b. 替换 metadata
@@ -180,7 +183,7 @@ const renderImageContentWithOnlyMetadata = async (): Promise<Blob> => {
       savedSvg = originalSvg;
     }
 
-    savedSvg = fixSvgContent(savedSvg as HTMLElement);
+    savedSvg = fixSvgContent(savedSvg);
 
     // c. 转换为 dataURL
     blob = new Blob([savedSvg!.outerHTML], { type: 'image/svg+xml' });
@@ -188,17 +191,15 @@ const renderImageContentWithOnlyMetadata = async (): Promise<Blob> => {
     // ===== PNG 分支 =====
 
     // a. 导出原始 PNG（包含完整 iframe 渲染）
-    const originalPngBlob = await exportToBlob({
-      elements: elements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    const originalPngBlob = await exportScene({
+      type: 'png',
+      data: { elements: elements, appState, files: files },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
       },
-      files: files,
-      mimeType: 'image/png',
-      exportPadding: exportPadding,
     });
     const originalBinaryArray = await blobToArray(originalPngBlob);
 
@@ -245,29 +246,29 @@ const renderImageContentWithMetadataAndImage = async (): Promise<Blob> => {
     // ===== SVG 分支 =====
 
     // a. 导出原始 SVG（包含完整 iframe 渲染）
-    const originalSvg = await exportToSvg({
-      elements: elements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    const originalSvg = await exportScene({
+      type: 'svg',
+      data: { elements: elements, appState, files: files },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
+        renderEmbeddables: false,
       },
-      files: files,
-      renderEmbeddables: false,
     });
 
     // b. 导出处理后 SVG（iframe 已替换为图像）
-    let processedSvg = await exportToSvg({
-      elements: processedElements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    let processedSvg: HTMLElement | SVGSVGElement = await exportScene({
+      type: 'svg',
+      data: { elements: processedElements, appState, files: processedFiles },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
+        renderEmbeddables: false,
       },
-      files: processedFiles,
-      renderEmbeddables: false,
     });
 
     // c. 替换 metadata
@@ -288,32 +289,28 @@ const renderImageContentWithMetadataAndImage = async (): Promise<Blob> => {
     // ===== PNG 分支 =====
 
     // a. 导出原始 PNG（包含完整 iframe 渲染）
-    const originalPngBlob = await exportToBlob({
-      elements: elements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    const originalPngBlob = await exportScene({
+      type: 'png',
+      data: { elements: elements, appState, files: files },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
       },
-      files: files,
-      mimeType: 'image/png',
-      exportPadding: exportPadding,
     });
     const originalBinaryArray = await blobToArray(originalPngBlob);
 
     // b. 导出处理后 PNG（iframe 已替换为图像）
-    const processedPngBlob = await exportToBlob({
-      elements: processedElements,
-      appState: {
-        ...appState,
-        exportWithDarkMode: false,
-        exportEmbedScene: true,
-        exportBackground: false,
+    const processedPngBlob = await exportScene({
+      type: 'png',
+      data: { elements: processedElements, appState, files: processedFiles },
+      config: {
+        theme: 'light',
+        embedScene: true,
+        canvasBackgroundColor: false,
+        padding: exportPadding,
       },
-      files: processedFiles,
-      mimeType: 'image/png',
-      exportPadding: exportPadding,
     });
     let processedBinaryArray = await blobToArray(processedPngBlob);
 
@@ -427,8 +424,10 @@ const openLink = (element: any, event: CustomEvent<{ nativeEvent: MouseEvent | R
       }
     });
     if (targets.length > 0) {
-      window.excalidrawAPI.scrollToContent(targets, {
-        animate: true,
+      window.excalidrawAPI.setViewport({
+        target: targets,
+        fit: 'none',
+        animation: true,
       });
     }
   }
@@ -437,7 +436,7 @@ const openLink = (element: any, event: CustomEvent<{ nativeEvent: MouseEvent | R
   }
 }
 
-const App = (props: { initialData: any }) => {
+const App = (props: { initialData: ExcalidrawInitialDataState }) => {
   // 300ms 内没有修改才保存
   let lastAutoSaveTime = 0;
   const debouncedAutoSave = debounce(() => {
@@ -493,10 +492,11 @@ const App = (props: { initialData: any }) => {
     await saveLibrary(libraryItems);
   };
 
-  const setExcalidrawAPI = (api: any) => {
+  const setExcalidrawAPI = (api: ExcalidrawImperativeAPI | null) => {
     window.excalidrawAPI = api;
+  };
 
-    // 通知已准备好
+  const handleInitialize = () => {
     postMessage({ event: 'ready' });
   };
 
@@ -507,7 +507,8 @@ const App = (props: { initialData: any }) => {
       onChange={handleChange}
       onPaste={handlePaste}
       onLibraryChange={handleLibraryChange}
-      excalidrawAPI={setExcalidrawAPI}
+      onExcalidrawAPI={setExcalidrawAPI}
+      onInitialize={handleInitialize}
       validateEmbeddable={true}
       renderEmbeddable={renderEmbeddable}
       generateLinkForSelection={(id: string, type: "element" | "group") => { return `${type}=${id}`; }}
@@ -547,7 +548,7 @@ const App = (props: { initialData: any }) => {
           >{langCode.startsWith('zh') ? '切换全屏' : 'Toggle Fullscreen'}
           </MainMenu.Item>
         }
-        <MainMenu.DefaultItems.ToggleTheme />
+        <MainMenu.DefaultItems.ToggleTheme allowSystemTheme={false} />
         <MainMenu.DefaultItems.ChangeCanvasBackground />
         <MainMenu.DefaultItems.ClearCanvas />
       </MainMenu>
@@ -662,19 +663,19 @@ const getMarkdownToolButton = () => {
     const elementId = nanoid();
     const appState = window.excalidrawAPI.getAppState();
     const { x, y } = viewportCoordsToSceneCoords(
-      { clientX: appState.width / 2, clientY: appState.height / 2 },
+      { clientX: appState.offsetLeft + appState.width / 2, clientY: appState.offsetTop + appState.height / 2 },
       appState,
     );
 
     // 创建 Markdown embeddable 元素
-    const newElement = {
+    const newElement: ExcalidrawEmbeddableElement = {
       id: elementId,
       type: 'embeddable',
       x,
       y,
       width: 300,
       height: 185,
-      angle: 0,
+      angle: 0 as ExcalidrawEmbeddableElement['angle'],
       strokeColor: '#1e1e1e',
       backgroundColor: 'transparent',
       fillStyle: 'solid',
@@ -684,7 +685,7 @@ const getMarkdownToolButton = () => {
       opacity: 100,
       groupIds: [],
       frameId: null,
-      index: 'aO',
+      index: null,
       roundness: {
         type: 3,
       },
@@ -693,6 +694,7 @@ const getMarkdownToolButton = () => {
       versionNonce: Math.floor(Math.random() * 10000),
       isDeleted: false,
       boundElements: [],
+      created: Date.now(),
       updated: Date.now(),
       link: `markdown`,
       locked: false,
@@ -707,7 +709,10 @@ const getMarkdownToolButton = () => {
     };
 
     const sceneElements = window.excalidrawAPI.getSceneElements();
-    window.excalidrawAPI.updateScene({ elements: [...sceneElements, newElement] });
+    window.excalidrawAPI.updateScene({
+      elements: restoreElements([...sceneElements, newElement], sceneElements),
+      captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+    });
   });
 
   return element;
@@ -785,7 +790,7 @@ if (libraryUrlTokens) {
 window.addEventListener('keydown', (event: KeyboardEvent) => {
   if (matchHotKey('⌘S', event)) {
     event.preventDefault();
-    if (!saveStatus.saving && !window.excalidrawAPI.getAppState().activeEmbeddable) save("save");
+    if (window.excalidrawAPI && !saveStatus.saving && !window.excalidrawAPI.getAppState().activeEmbeddable) save("save");
   } else if (matchHotKey('⌥Y', event)) {
     event.preventDefault();
     postMessage({ event: 'toggleFullscreen' });
@@ -794,7 +799,7 @@ window.addEventListener('keydown', (event: KeyboardEvent) => {
 
 window.addEventListener('drop', (event: DragEvent) => {
   const dragElement: HTMLElement | null = window.parent?.siyuan?.dragElement;
-  if (dragElement) {
+  if (dragElement && window.excalidrawAPI) {
     let blockId = (dragElement.querySelector('.protyle-wysiwyg--select[data-node-id]') as HTMLElement)?.getAttribute('data-node-id');
     if (!blockId && dragElement.nodeName === 'DIV' && dragElement.childNodes.length === 1 && dragElement.firstChild?.nodeName === '#text') {
       blockId = dragElement.textContent;
@@ -808,14 +813,14 @@ window.addEventListener('drop', (event: DragEvent) => {
       );
 
       // 创建 Markdown embeddable 元素
-      const newElement = {
+      const newElement: ExcalidrawEmbeddableElement = {
         id: elementId,
         type: 'embeddable',
         x,
         y,
         width: 300,
         height: 185,
-        angle: 0,
+        angle: 0 as ExcalidrawEmbeddableElement['angle'],
         strokeColor: '#1e1e1e',
         backgroundColor: 'transparent',
         fillStyle: 'solid',
@@ -825,7 +830,7 @@ window.addEventListener('drop', (event: DragEvent) => {
         opacity: 100,
         groupIds: [],
         frameId: null,
-        index: 'aO',
+        index: null,
         roundness: {
           type: 3,
         },
@@ -834,13 +839,17 @@ window.addEventListener('drop', (event: DragEvent) => {
         versionNonce: Math.floor(Math.random() * 10000),
         isDeleted: false,
         boundElements: [],
+        created: Date.now(),
         updated: Date.now(),
         link: `siyuan://blocks/${blockId}`,
         locked: false,
       };
 
       const sceneElements = window.excalidrawAPI.getSceneElements();
-      window.excalidrawAPI.updateScene({ elements: [...sceneElements, newElement] });
+      window.excalidrawAPI.updateScene({
+        elements: restoreElements([...sceneElements, newElement], sceneElements),
+        captureUpdate: CaptureUpdateAction.IMMEDIATELY,
+      });
     }
   }
 });
